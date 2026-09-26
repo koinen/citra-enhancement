@@ -1,0 +1,8 @@
+# Dataset (not tracked)
+data/*
+!data/.gitkeep
+
+# MATLAB
+*.asv
+*.mex*
+slprj/
