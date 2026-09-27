@@ -13,9 +13,14 @@ classdef IntensityTransformation < Enhancement
             if nargin >= 2, obj.Gamma = gamma; end
         end
 
-        function out = apply(obj, img)
+        function out = apply(obj, request)
+            arguments
+                obj
+                request (1, 1) EnhancementRequest
+            end
             % TODO: implement
-            out = img;
+            out = EnhancementResult;
+            
         end
     end
 end

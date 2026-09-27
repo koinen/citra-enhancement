@@ -7,6 +7,6 @@ classdef (Abstract) Enhancement
 
     methods (Abstract)
         % Returns the enhanced image. Output must keep the input's color type.
-        out = apply(obj, img)
+        out = apply(obj, request)
     end
 end

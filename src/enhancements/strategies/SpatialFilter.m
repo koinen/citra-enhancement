@@ -13,9 +13,15 @@ classdef SpatialFilter < Enhancement
             if nargin >= 1, obj.Mode = mode; end
         end
 
-        function out = apply(obj, img)
+        function out = apply(obj, request)
+            arguments
+                obj
+                request (1, 1) EnhancementRequest
+            end
             % TODO: implement
-            out = img;
+            % out = img;
+            out = EnhancementResult;
+            % out.Image = ...
         end
     end
 end

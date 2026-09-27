@@ -11,9 +11,14 @@ classdef HistogramMatching < Enhancement
             if nargin >= 1, obj.Reference = reference; end
         end
 
-        function out = apply(obj, img)
-            % TODO: implement using histogram256
-            out = img;
+        function out = apply(obj, request)
+            arguments
+                obj
+                request (1, 1) EnhancementRequest
+            end
+            % TODO: implement
+            out = EnhancementResult;
+
         end
     end
 end
