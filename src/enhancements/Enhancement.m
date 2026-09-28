@@ -1,12 +1,22 @@
 classdef (Abstract) Enhancement
-    % Enhancement  Base interface for all image enhancement techniques.
+    % Enhancement  Common base class for every image enhancement technique.
 
     properties
-        Name char = ''
+        Name char = ''  
     end
 
     methods (Abstract)
-        % Returns the enhanced image. Output must keep the input's color type.
         out = apply(obj, img)
+    end
+
+    methods (Static, Access = protected)
+        function out = applyPerChannel(img, channelFn)
+            out = img;
+            numChannels = size(img, 3);
+
+            for k = 1:numChannels
+                out(:, :, k) = channelFn(img(:, :, k));
+            end
+        end
     end
 end
