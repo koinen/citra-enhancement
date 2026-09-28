@@ -1,5 +1,5 @@
 classdef SpatialFilter < Enhancement
-    % SpatialFilter  Image filtering with a mask (neighbourhood operation).
+    % SpatialFilter  Image filtering with masking: linear convolution or median.
 
     properties
         Mode char = 'linear'          % 'linear' or 'median'
@@ -25,15 +25,51 @@ classdef SpatialFilter < Enhancement
             end
         end
 
-        function out = apply(obj, img)
+        function out = apply(obj, request)
+            arguments
+                obj
+                request (1, 1) EnhancementRequest
+            end
+
+            out = EnhancementResult;
+            out.MethodName = sprintf('%s (%s)', obj.Name, obj.Mode);
+
             switch obj.Mode
                 case 'linear'
-                    out = obj.applyPerChannel(img, @(channel) convolve(channel, obj.Kernel));
+                    out.Image = obj.applyPerChannel(request.Image, @(channel) convolve(channel, obj.Kernel));
+                    out.ParamsUsed = struct('Mode', obj.Mode, 'Kernel', obj.Kernel);
                 case 'median'
-                    out = obj.applyPerChannel(img, @(channel) medianFilter(channel, obj.WindowSize));
+                    out.Image = obj.applyPerChannel(request.Image, @(channel) medianFilter(channel, obj.WindowSize));
+                    out.ParamsUsed = struct('Mode', obj.Mode, 'WindowSize', obj.WindowSize);
                 otherwise
                     error('SpatialFilter:unknownMode', ...
                         'Unknown mode "%s". Use linear or median.', obj.Mode);
+            end
+        end
+    end
+
+    methods (Static)
+        function kernel = makeKernel(type, windowSize, sigma)
+            % makeKernel('Mean' | 'Box' | 'Gaussian' | 'Laplacian', windowSize, sigma)
+            %   sigma is only used by 'Gaussian'. 'Laplacian' is always 3x3.
+            switch lower(type)
+                case {'mean', 'box'}
+                    kernel = ones(windowSize) / windowSize ^ 2;
+
+                case 'gaussian'
+                    half = floor(windowSize / 2);
+                    [x, y] = meshgrid(-half:half);
+                    kernel = exp(-(x .^ 2 + y .^ 2) / (2 * sigma ^ 2));
+                    kernel = kernel / sum(kernel(:));   % weights sum to 1, brightness is kept
+
+                case 'laplacian'
+                    % Image minus its Laplacian: sharpens edges, unlike the
+                    % plain Laplacian which only returns the edges.
+                    kernel = [0 -1 0; -1 5 -1; 0 -1 0];
+
+                otherwise
+                    error('SpatialFilter:unknownKernel', ...
+                        'Unknown kernel "%s". Use Mean, Box, Gaussian or Laplacian.', type);
             end
         end
     end
@@ -48,8 +84,7 @@ function out = convolve(channel, kernel)
     kernel = rot90(kernel, 2);
     padded = double(padReplicate(channel, floor(kernelHeight / 2), floor(kernelWidth / 2)));
 
-    % Instead of visiting every pixel, visit every mask position once:
-    % shift the whole image by that offset and add it with the mask weight.
+    % Add a weighted, shifted copy of the image for every mask position.
     total = zeros(height, width);
     for i = 1:kernelHeight
         for j = 1:kernelWidth
@@ -57,7 +92,7 @@ function out = convolve(channel, kernel)
         end
     end
 
-    % uint8() rounds and clips anything outside 0..255 (e.g. from sharpening).
+    % uint8() rounds and clips to 0..255 (sharpening can overshoot).
     out = uint8(total);
 end
 
@@ -67,8 +102,7 @@ function out = medianFilter(channel, windowSize)
     radius = floor(windowSize / 2);
     padded = padReplicate(channel, radius, radius);
 
-    % Stack every neighbour of every pixel along the 3rd dimension,
-    % then take the median along that dimension.
+    % Stack the neighbours of every pixel along the 3rd dimension.
     neighbours = zeros(height, width, windowSize ^ 2, 'uint8');
     n = 0;
     for i = 1:windowSize
@@ -83,8 +117,7 @@ end
 
 
 function padded = padReplicate(channel, padRows, padCols)
-    % Add a border by repeating the outermost rows and columns, so the mask
-    % also has neighbours to look at on the image edges.
+    % Repeat the outermost rows and columns so edge pixels have neighbours.
     [height, width] = size(channel);
     rows = [ones(1, padRows), 1:height, height * ones(1, padRows)];
     cols = [ones(1, padCols), 1:width, width * ones(1, padCols)];

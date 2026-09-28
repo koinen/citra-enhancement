@@ -1,32 +1,34 @@
 function main(imgPath, refPath)
 % MAIN  Apply every enhancement preset to one image and show the results.
-%   main('data/Kasus 1/img.png')
-%   main('data/Kasus 1/img.png', 'data/ref.png')   % reference for matching
+%   main('data/2. Kasus 1/image_01.png')
+%   main('data/2. Kasus 1/image_01.png', 'data/5. Kasus 4/image_01.png')   % reference for matching
 
 addpath(genpath(fullfile(fileparts(mfilename('fullpath')), 'src')));
 
-img = imread(imgPath);
+request = EnhancementRequest;
+request.Image = imread(imgPath);
 if nargin < 2
-    ref = img;
+    request.ReferenceImage = request.Image;
 else
-    ref = imread(refPath);
+    request.ReferenceImage = imread(refPath);
 end
 
 presets = {
     IntensityTransformation('gamma', 1.0)
     HistogramEqualization()
-    HistogramMatching(ref)
+    HistogramMatching()
     SpatialFilter('linear')
 };
 
 figure('Name', 'Enhancement Presets');
 subplot(1, numel(presets) + 1, 1);
-imshow(img);
+imshow(request.Image);
 title('Input');
 
 for i = 1:numel(presets)
+    result = presets{i}.apply(request);
     subplot(1, numel(presets) + 1, i + 1);
-    imshow(presets{i}.apply(img));
-    title(presets{i}.Name);
+    imshow(result.Image);
+    title(result.MethodName);
 end
 end

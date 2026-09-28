@@ -2,11 +2,11 @@ classdef (Abstract) Enhancement
     % Enhancement  Common base class for every image enhancement technique.
 
     properties
-        Name char = ''  
+        Name char = ''
     end
 
     methods (Abstract)
-        out = apply(obj, img)
+        out = apply(obj, request)
     end
 
     methods (Static, Access = protected)
