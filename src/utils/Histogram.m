@@ -6,6 +6,18 @@ classdef Histogram
     end
 
     methods (Static)
+        function isSame = matchesImhist(img)
+            isSame = true;
+            for c = 1:size(img, 3)
+                diyCounts = Histogram.compute(img(:, :, c));
+                builtinCounts = imhist(img(:, :, c), Histogram.Levels);
+                if ~isequal(diyCounts(:), builtinCounts(:))
+                    isSame = false;
+                    return
+                end
+            end
+        end
+
         function counts = compute(channel)
             Histogram.checkChannel(channel);
 
